@@ -37,3 +37,19 @@ class SiLU(nn.Module):
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x * torch.sigmoid(x)
+
+
+class SwiGLU(nn.Module):
+    def __init__(self, dim_in: int, dim_out: int):
+        super().__init__()
+        # Swish(SiLU) + GLU
+        self.dim_in = dim_in
+        self.dim_out = dim_out
+        
+        self.linear = nn.Linear(dim_in, dim_out * 2)
+        self.silu = SiLU()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.linear(x)
+        gate, value = x.chunk(2, dim=-1)
+        return self.silu(gate) * value
