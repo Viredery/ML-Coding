@@ -22,6 +22,7 @@ class MultiHeadAttention(nn.Module):
 	def forward(self, 
 	            hidden_state: torch.Tensor,
 	            attention_mask: torch.Tensor = None,
+				is_causal: bool = True,
 	            kv_cache: tuple[torch.Tensor, torch.Tensor] = None):
 		"""
 		Args:
@@ -49,8 +50,12 @@ class MultiHeadAttention(nn.Module):
 
 		attn_logits = q @ k.transpose(-2, -1)
 		attn_logits *= scale
+
+		if is_causal:
+			attention_mask = torch.tril(torch.ones(batch_size, seq_len, seq_len))
 		if attention_mask is not None:
 			attn_logits = attn_logits.masked_fill(attention_mask[:, None, :, :] == 0, float("-inf"))
+
 		attn = self.softmax(attn_logits.to(torch.float32)).to(ori_type)
 		attn = self.dropout(attn)
 
